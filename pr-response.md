@@ -1,7 +1,10 @@
 # PR Response Doc — CineLog Watchlist Feature
 
 ## AI Usage
-<!-- Fill in at the end — how you used AI tools during this project -->
+I used an AI assistant to speed up orientation and reduce documentation omissions:
+- Codebase orientation: compared `services/collection_service.py` + `tests/test_collection.py` patterns to mirror how CineLog handles domain errors, deduplication, and test structure for the watchlist feature.
+- Design stress-test: drafted the initial positions for Comment 4 (visibility default) and Comment 5 (sort order) and then refined them to explicitly address the tradeoffs and the maintainer’s “added recently” point with CineLog-specific context.
+- Documentation: converted the implemented behavior into a reviewer-friendly PR description and concrete manual testing steps for the `/watchlist/<user_id>` endpoints.
 
 ## Comment 1 — Rename
 **What I did:**
@@ -63,4 +66,67 @@ Rebased `feature/watchlist` onto `origin/main` and updated the watchlist code to
 Confirmed the branch history is linear after rebase and re-ran `pytest tests/ -v` to ensure the suite passes on the rebased code.
 
 ## PR Description
-<!-- Written at the end — feature overview, design decisions, manual testing steps -->
+This PR implements CineLog’s **watchlist** feature (simulated code review).
+
+What’s included:
+- A new watchlist domain model (`WatchlistEntry`) and service functions in `services/watchlist_service.py`.
+- A new watchlist API blueprint with endpoints:
+  - `GET /watchlist/<user_id>`: returns the user’s watchlist items (including `date_added` and `public`).
+  - `POST /watchlist/<user_id>/add`: adds a film to the user’s watchlist by `film_id`.
+
+Design decisions (explicit):
+- **Default visibility**: `public = True` for newly added watchlist entries.
+- **Sort order**: watchlist results are returned **newest-first** by `date_added` (descending).
+
+Manual testing (end to end):
+1. Start the app (in the project root):
+   ```bash
+   pip install -r requirements.txt
+   python app.py
+   ```
+   The server should run at `http://127.0.0.1:5000`.
+
+2. Create a test `user` and `film` (so you have valid UUIDs to call the watchlist endpoints):
+   ```bash
+   python - <<'PY'
+   from app import create_app, db
+   from models import User, Film
+
+   app = create_app()
+   with app.app_context():
+       db.create_all()
+       user = User(username="watchlist_user", email="watchlist_user@example.com")
+       film = Film(title="Watchlist Test Film", year=2026, genre="Drama")
+       db.session.add_all([user, film])
+       db.session.commit()
+       print(user.id)
+       print(film.id)
+   PY
+   ```
+   Copy the printed values into `USER_ID` and `FILM_ID`.
+
+3. Add the film to the watchlist:
+   ```bash
+   curl -X POST "http://127.0.0.1:5000/watchlist/$USER_ID/add" \
+     -H "Content-Type: application/json" \
+     -d "{\"film_id\":\"$FILM_ID\"}"
+   ```
+   Expect `201` and a JSON response containing `film_id` and `public` (should be `true` by default).
+
+4. Fetch the watchlist and verify:
+   ```bash
+   curl "http://127.0.0.1:5000/watchlist/$USER_ID"
+   ```
+   Verify:
+   - The returned list contains the film you added.
+   - Each item includes `date_added` and `public`.
+   - The first item is the most recently added one.
+
+5. Verify sort order (newest-first):
+   - Repeat step (2) to create a second `film_id` (a newer film entry).
+   - Repeat step (3) for that second film.
+   - Run step (4) again and confirm the second film appears before the first in the returned list.
+
+6. Verify deduplication behavior:
+   - Run step (3) again with the same `film_id`.
+   - Confirm you do not end up with duplicate entries for the same `(user_id, film_id)` (the watchlist should not grow additional items for that same film).
