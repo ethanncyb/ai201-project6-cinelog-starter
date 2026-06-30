@@ -130,3 +130,12 @@ Manual testing (end to end):
 6. Verify deduplication behavior:
    - Run step (3) again with the same `film_id`.
    - Confirm you do not end up with duplicate entries for the same `(user_id, film_id)` (the watchlist should not grow additional items for that same film).
+
+## Stretch — Remove from watchlist
+**What I did:**
+Added `remove_from_watchlist(user_id, film_id)` in `services/watchlist_service.py`, following the same pattern as `remove_from_collection()` in `services/collection_service.py`. If the film is not on the watchlist, it raises `NotInWatchlistError`. Also added `DELETE /watchlist/<user_id>/remove` and tests in `tests/test_watchlist.py`.
+
+**How I verified:**
+- `test_remove_from_watchlist_removes_entry` confirms a saved film is deleted from the watchlist.
+- `test_remove_from_watchlist_not_on_watchlist_raises` confirms removing a film that was never added raises `NotInWatchlistError`.
+- Ran `pytest tests/test_watchlist.py -v`.
