@@ -139,3 +139,13 @@ Added `remove_from_watchlist(user_id, film_id)` in `services/watchlist_service.p
 - `test_remove_from_watchlist_removes_entry` confirms a saved film is deleted from the watchlist.
 - `test_remove_from_watchlist_not_on_watchlist_raises` confirms removing a film that was never added raises `NotInWatchlistError`.
 - Ran `pytest tests/test_watchlist.py -v`.
+
+## Stretch — Second watchlist test
+**What I did:**
+Added `test_add_to_watchlist_duplicate_raises` to verify that adding the same film twice raises `AlreadyInWatchlistError` and leaves only one watchlist row.
+
+**Why this edge case:**
+Comment 3 required the nonexistent-film case. Duplicate adds are the next most important failure mode for watchlists because they are easy to trigger (double-click save, retry after a slow network) and the rubric’s deduplication work should be provably enforced at the test layer, not only by reading the service code.
+
+**How I verified:**
+Modeled after `tests/test_collection.py::test_add_to_collection_duplicate_raises`. Ran `pytest tests/test_watchlist.py -v`.
