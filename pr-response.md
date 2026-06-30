@@ -65,6 +65,12 @@ Rebased `feature/watchlist` onto `origin/main` and updated the watchlist code to
 **How I verified no conflict remains:**
 Confirmed the branch history is linear after rebase and re-ran `pytest tests/ -v` to ensure the suite passes on the rebased code.
 
+## Commit History
+
+Screenshot of `git log --oneline` on `feature/watchlist` (conventional commits, no merge commits):
+
+![git log --oneline on feature/watchlist](screenshot.png)
+
 ## PR Description
 This PR implements CineLog’s **watchlist** feature (simulated code review).
 
