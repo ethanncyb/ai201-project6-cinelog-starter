@@ -72,7 +72,7 @@ What’s included:
 - A new watchlist domain model (`WatchlistEntry`) and service functions in `services/watchlist_service.py`.
 - A new watchlist API blueprint with endpoints:
   - `GET /watchlist/<user_id>`: returns the user’s watchlist items (including `date_added` and `public`).
-  - `POST /watchlist/<user_id>/add`: adds a film to the user’s watchlist by `film_id`.
+  - `POST /watchlist/<user_id>/add`: adds a film to the user’s watchlist by `film_id` (optional `public` field).
 
 Design decisions (explicit):
 - **Default visibility**: `public = True` for newly added watchlist entries.
@@ -145,7 +145,21 @@ Added `remove_from_watchlist(user_id, film_id)` in `services/watchlist_service.p
 Added `test_add_to_watchlist_duplicate_raises` to verify that adding the same film twice raises `AlreadyInWatchlistError` and leaves only one watchlist row.
 
 **Why this edge case:**
-Comment 3 required the nonexistent-film case. Duplicate adds are the next most important failure mode for watchlists because they are easy to trigger (double-click save, retry after a slow network) and the rubric’s deduplication work should be provably enforced at the test layer, not only by reading the service code.
+Comment 3 covered the nonexistent-film case. Duplicate adds are the next most important failure mode for watchlists because they are easy to trigger (double-click save, retry after a slow network) and the deduplication logic should be provably enforced at the test layer, not only by reading the service code.
 
 **How I verified:**
 Modeled after `tests/test_collection.py::test_add_to_collection_duplicate_raises`. Ran `pytest tests/test_watchlist.py -v`.
+
+## Stretch — Visibility toggle
+**What I did:**
+Added an optional `public` parameter to `add_to_watchlist(user_id, film_id, public=True)` and wired it through `POST /watchlist/<user_id>/add`. Callers can send `"public": false` in the JSON body to create a private entry; if omitted, the default remains `true`.
+
+**How a caller uses it:**
+```bash
+curl -X POST "http://127.0.0.1:5000/watchlist/$USER_ID/add" \
+  -H "Content-Type: application/json" \
+  -d "{\"film_id\":\"$FILM_ID\", \"public\": false}"
+```
+
+**How I verified:**
+Added `test_add_to_watchlist_respects_public_false` and ran `pytest tests/test_watchlist.py -v`.
