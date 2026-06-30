@@ -52,10 +52,15 @@ I agree with the maintainer’s argument that most users care about what they ad
 
 ## Comment 6 — Rebase
 **What conflicted:**
+The `feature/watchlist` branch was originally built on the pre-refactor model where `Film.id` (and related foreign keys like `WatchlistEntry.film_id`) were integers. `main` refactored film IDs to UUID strings.
 
 **How I resolved it:**
+Rebased `feature/watchlist` onto `origin/main` and updated the watchlist code to match the UUID-based model:
+- Ensured `WatchlistEntry.film_id` is a UUID string FK to `Film.id`
+- Updated watchlist service + route docs/tests to treat `film_id` as a UUID string
 
 **How I verified no conflict remains:**
+Confirmed the branch history is linear after rebase and re-ran `pytest tests/ -v` to ensure the suite passes on the rebased code.
 
 ## PR Description
 <!-- Written at the end — feature overview, design decisions, manual testing steps -->
